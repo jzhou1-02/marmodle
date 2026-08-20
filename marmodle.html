@@ -199,11 +199,14 @@
       <div>
         <h1>Marmo<span>dle</span></h1>
         <p class="tagline">Guess the MCAT biochem pathway in six tries.</p>
+        <p class="tagline" id="modeLabel" style="font-weight:800;color:var(--marmot-dark)"></p>
+        <p class="tagline" id="streakLabel" style="font-weight:800;color:var(--spruce)"></p>
       </div>
     </div>
     <div class="header-btns">
       <button class="icon-btn" id="howBtn">How to play</button>
-      <button class="icon-btn" id="newBtn">New puzzle</button>
+      <button class="icon-btn" id="dailyBtn">Today's puzzle</button>
+      <button class="icon-btn" id="newBtn">Practice puzzle</button>
     </div>
   </header>
 
@@ -334,15 +337,81 @@ const PATHWAYS = [
   {name:"Cholesterol Synthesis", loc:"Cytosol", role:"Anabolic", state:"Fed", atp:"Consumes", fuel:"Lipids",
    enzyme:"HMG-CoA reductase", fact:"HMG-CoA reductase is the statin target. Same starting material as ketogenesis (HMG-CoA), different compartment, different fate."},
   {name:"Urea Cycle", loc:"Both", role:"Catabolic", state:"Fasted", atp:"Consumes", fuel:"Amino acids",
-   enzyme:"Carbamoyl phosphate synthetase I", fact:"Starts in the mitochondria, finishes in the cytosol. N-acetylglutamate is the required activator of CPS-I. Disposes of nitrogen from amino acid breakdown."}
+   enzyme:"Carbamoyl phosphate synthetase I", fact:"Starts in the mitochondria, finishes in the cytosol. N-acetylglutamate is the required activator of CPS-I. Disposes of nitrogen from amino acid breakdown."},
+  {name:"Galactose Metabolism", loc:"Cytosol", role:"Catabolic", state:"Fed", atp:"Consumes", fuel:"Carbs",
+   enzyme:"Galactose-1-P uridyltransferase (GALT)", fact:"Lactase splits lactose into glucose + galactose; galactokinase then traps galactose with ATP. GALT deficiency causes classic galactosemia — galactitol buildup leads to cataracts."},
+  {name:"Fructose Metabolism", loc:"Cytosol", role:"Catabolic", state:"Fed", atp:"Consumes", fuel:"Carbs",
+   enzyme:"Fructokinase", fact:"Fructokinase traps fructose as fructose-1-phosphate, then aldolase B splits it into glycolytic intermediates — bypassing PFK-1 regulation entirely. Aldolase B deficiency = hereditary fructose intolerance."},
+  {name:"Ketolysis", loc:"Mitochondria", role:"Catabolic", state:"Fasted", atp:"Produces", fuel:"Lipids",
+   enzyme:"Thiophorase (SCOT)", fact:"Extrahepatic tissues convert ketone bodies back into acetyl-CoA using thiophorase (succinyl-CoA acetoacetate transferase). The liver lacks this enzyme — it makes ketones but can't burn them."},
+  {name:"Lactic Acid Fermentation", loc:"Cytosol", role:"Catabolic", state:"Both", atp:"Produces", fuel:"Carbs",
+   enzyme:"Lactate dehydrogenase", fact:"LDH regenerates NAD+ so glycolysis can keep running without oxygen — RBCs always (no mitochondria), muscle during sprints. Lactate ships to the liver for gluconeogenesis via the Cori cycle."}
 ];
 
 const MAX_GUESSES = 6;
 const COLS = ["loc","role","state","atp","fuel"];
 const COL_LABELS = {loc:"Location", role:"Build / Break", state:"Fed / Fasted", atp:"ATP", fuel:"Fuel class"};
 
+/* ---------- daily puzzle logic ----------
+   Everyone's browser computes the same day number from the date,
+   scrambles it, and uses it to index the pathway list. Same day =
+   same puzzle for every visitor, with no server involved. */
+const EPOCH = new Date(2026, 7, 20);           // puzzle #1 = Aug 20, 2026 (launch day!)
+function dayNumber(){
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.floor((today - EPOCH) / 86400000) + 1;
+}
+function dailyPathway(){
+  // hash the day number so the list isn't walked in guessable order
+  let x = dayNumber();
+  x = ((x >>> 16) ^ x) * 0x45d9f3b;
+  x = ((x >>> 16) ^ x) * 0x45d9f3b;
+  x = (x >>> 16) ^ x;
+  return PATHWAYS[Math.abs(x) % PATHWAYS.length];
+}
+
+/* ---------- streaks ----------
+   Saved in the browser's localStorage on the deployed site. If storage
+   is unavailable (private browsing, embedded previews), the game falls
+   back to remembering the streak for the current session only. */
+const store = {
+  mem: null,
+  read(){
+    try { return JSON.parse(localStorage.getItem("marmodle-streak")) || this.mem || {streak:0, best:0, lastWinDay:null}; }
+    catch(e){ return this.mem || {streak:0, best:0, lastWinDay:null}; }
+  },
+  write(d){
+    this.mem = d;
+    try { localStorage.setItem("marmodle-streak", JSON.stringify(d)); } catch(e){}
+  }
+};
+function recordDailyWin(){
+  const d = store.read();
+  const dn = dayNumber();
+  if (d.lastWinDay === dn) return d;             // already solved today
+  d.streak = (d.lastWinDay === dn - 1) ? d.streak + 1 : 1;
+  d.best = Math.max(d.best, d.streak);
+  d.lastWinDay = dn;
+  store.write(d);
+  return d;
+}
+function currentStreak(){
+  const d = store.read();
+  const dn = dayNumber();
+  // a streak is alive if the last win was today or yesterday
+  return (d.lastWinDay === dn || d.lastWinDay === dn - 1) ? d.streak : 0;
+}
+function renderStreak(){
+  const d = store.read();
+  const live = currentStreak();
+  $("streakLabel").textContent = (live > 0 || d.best > 0)
+    ? `🔥 Streak: ${live} · Best: ${d.best}`
+    : "";
+}
+
 /* ---------- state ---------- */
-let secret, guesses, gameOver, hintUsed;
+let secret, guesses, gameOver, hintUsed, mode = "daily";
 
 const $ = id => document.getElementById(id);
 const speech = $("speechText"), input = $("guessInput"), sugBox = $("suggestions");
@@ -355,8 +424,16 @@ const MARMOT_LINES = [
   "The marmot is digging deeper. One guess left after this!",
 ];
 
-function newGame(){
-  secret = PATHWAYS[Math.floor(Math.random()*PATHWAYS.length)];
+function newGame(m){
+  mode = m || mode;
+  if (mode === "daily"){
+    secret = dailyPathway();
+    const d = new Date();
+    $("modeLabel").textContent = `Daily puzzle #${dayNumber()} · ${d.toLocaleDateString(undefined,{month:"long",day:"numeric"})}`;
+  } else {
+    secret = PATHWAYS[Math.floor(Math.random()*PATHWAYS.length)];
+    $("modeLabel").textContent = "Practice mode · unlimited plays";
+  }
   guesses = [];
   gameOver = false;
   hintUsed = false;
@@ -368,6 +445,7 @@ function newGame(){
   $("hintBtn").disabled = false;
   renderBoard();
   renderBurrow();
+  renderStreak();
   closeOverlays();
   input.focus();
 }
@@ -454,9 +532,15 @@ function win(){
   lockInput();
   $("marmot").classList.add("happy");
   speech.innerHTML = "<strong>WHEEET!</strong> 🎺 The marmot whistles in triumph!";
+  let streakLine = "";
+  if (mode === "daily"){
+    const d = recordDailyWin();
+    renderStreak();
+    streakLine = ` 🔥 Daily streak: <b>${d.streak}</b> (best: ${d.best}).`;
+  }
   showEnd(
     "The marmot whistles! 🎉",
-    `You found <b>${secret.name}</b> in ${guesses.length} ${guesses.length===1?"guess":"guesses"}.`,
+    `You found <b>${secret.name}</b> in ${guesses.length} ${guesses.length===1?"guess":"guesses"}.${streakLine}`,
   );
 }
 function lose(){
@@ -531,8 +615,9 @@ function highlight(btns){
 
 /* ---------- buttons & modals ---------- */
 $("guessBtn").addEventListener("click", submitGuess);
-$("newBtn").addEventListener("click", newGame);
-$("playAgain").addEventListener("click", newGame);
+$("newBtn").addEventListener("click", ()=> newGame("practice"));
+$("dailyBtn").addEventListener("click", ()=> newGame("daily"));
+$("playAgain").addEventListener("click", ()=> newGame("practice"));
 $("closeEnd").addEventListener("click", ()=> $("endOverlay").classList.remove("open"));
 $("howBtn").addEventListener("click", ()=> $("howOverlay").classList.add("open"));
 $("closeHow").addEventListener("click", ()=> $("howOverlay").classList.remove("open"));
@@ -542,7 +627,7 @@ document.addEventListener("keydown", e=>{ if (e.key === "Escape") closeOverlays(
 });
 function closeOverlays(){ $("endOverlay").classList.remove("open"); $("howOverlay").classList.remove("open"); }
 
-newGame();
+newGame("daily");
 </script>
 </body>
 </html>
