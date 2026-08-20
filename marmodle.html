@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marmodle — the MCAT pathway guessing game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --meadow:#EDF1E4;
+    --sky:#DCE7EE;
+    --granite:#3E444B;
+    --granite-soft:#6B7278;
+    --spruce:#2F4B3E;
+    --marmot:#C98B3D;
+    --marmot-dark:#8A5A26;
+    --marmot-belly:#E8C99A;
+    --tile-green:#5E9C6F;
+    --tile-yellow:#E3B448;
+    --tile-gray:#B7BDC1;
+    --card:#FBFAF4;
+    --line:#D8DCCB;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'Nunito',sans-serif;
+    color:var(--granite);
+    background:linear-gradient(180deg,var(--sky) 0%,var(--meadow) 34%,var(--meadow) 100%);
+    min-height:100vh;
+  }
+  .wrap{max-width:880px;margin:0 auto;padding:0 20px 80px}
+
+  /* ---------- header ---------- */
+  header{
+    display:flex;align-items:flex-end;justify-content:space-between;
+    gap:16px;padding:26px 0 0;
+  }
+  .brand{display:flex;align-items:flex-end;gap:14px}
+  .brand h1{
+    font-family:'Baloo 2',cursive;font-weight:800;font-size:clamp(2rem,5vw,2.9rem);
+    color:var(--spruce);line-height:1;letter-spacing:.5px;
+  }
+  .brand h1 span{color:var(--marmot)}
+  .tagline{font-size:.95rem;color:var(--granite-soft);margin-top:4px}
+  .header-btns{display:flex;gap:8px}
+  .icon-btn{
+    font-family:'Baloo 2',cursive;font-weight:700;font-size:.9rem;
+    background:var(--card);border:2px solid var(--line);border-radius:999px;
+    padding:8px 16px;cursor:pointer;color:var(--spruce);transition:.15s;
+  }
+  .icon-btn:hover{border-color:var(--marmot);transform:translateY(-1px)}
+  .icon-btn:focus-visible{outline:3px solid var(--marmot);outline-offset:2px}
+
+  /* ---------- marmot mascot ---------- */
+  .mascot-row{
+    display:flex;align-items:flex-end;gap:18px;margin:18px 0 6px;
+    border-bottom:3px solid var(--line);padding-bottom:0;
+  }
+  .marmot-svg{width:110px;height:auto;flex-shrink:0;transform-origin:bottom center;animation:peek .9s ease}
+  @keyframes peek{from{transform:translateY(60%)}to{transform:translateY(0)}}
+  .marmot-svg.happy{animation:bounce .6s ease infinite alternate}
+  @keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-10px)}}
+  .marmot-svg.hiding{transform:translateY(62%);transition:transform .8s ease}
+  @media (prefers-reduced-motion: reduce){
+    .marmot-svg,.marmot-svg.happy{animation:none}
+    .tile{transition:none !important}
+  }
+  .speech{
+    background:var(--card);border:2px solid var(--line);border-radius:var(--radius);
+    padding:12px 16px;margin-bottom:14px;position:relative;flex:1;
+    font-size:.98rem;
+  }
+  .speech::before{
+    content:"";position:absolute;left:-10px;bottom:14px;
+    border:8px solid transparent;border-right-color:var(--line);
+  }
+  .speech strong{color:var(--marmot-dark)}
+  .burrow{
+    display:flex;gap:6px;margin-top:8px;align-items:center;
+    font-size:.78rem;color:var(--granite-soft);font-weight:700;letter-spacing:.4px;
+  }
+  .burrow .dot{
+    width:13px;height:13px;border-radius:50%;
+    background:var(--card);border:2px solid var(--marmot);
+  }
+  .burrow .dot.used{background:var(--marmot-dark);border-color:var(--marmot-dark)}
+
+  /* ---------- input ---------- */
+  .guess-bar{display:flex;gap:10px;margin:22px 0 8px;position:relative}
+  .guess-input{
+    flex:1;font-family:'Nunito',sans-serif;font-weight:700;font-size:1.05rem;
+    padding:14px 18px;border:3px solid var(--spruce);border-radius:var(--radius);
+    background:var(--card);color:var(--granite);
+  }
+  .guess-input::placeholder{color:var(--granite-soft);font-weight:600}
+  .guess-input:focus-visible{outline:3px solid var(--marmot);outline-offset:2px}
+  .guess-btn{
+    font-family:'Baloo 2',cursive;font-weight:800;font-size:1.05rem;letter-spacing:.5px;
+    background:var(--spruce);color:#fff;border:none;border-radius:var(--radius);
+    padding:0 28px;cursor:pointer;transition:.15s;
+  }
+  .guess-btn:hover:not(:disabled){background:var(--marmot-dark)}
+  .guess-btn:disabled{opacity:.45;cursor:not-allowed}
+  .guess-btn:focus-visible{outline:3px solid var(--marmot);outline-offset:2px}
+  .suggestions{
+    position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:30;
+    background:var(--card);border:2px solid var(--line);border-radius:var(--radius);
+    overflow:hidden;box-shadow:0 12px 30px rgba(47,75,62,.18);display:none;
+    max-height:260px;overflow-y:auto;
+  }
+  .suggestions.open{display:block}
+  .suggestions button{
+    display:block;width:100%;text-align:left;border:none;background:none;cursor:pointer;
+    font-family:'Nunito',sans-serif;font-weight:700;font-size:1rem;color:var(--granite);
+    padding:11px 18px;
+  }
+  .suggestions button:hover,.suggestions button.active{background:var(--meadow)}
+  .suggestions button:disabled{color:var(--tile-gray);cursor:not-allowed;text-decoration:line-through}
+
+  /* ---------- board ---------- */
+  .board{margin-top:20px;display:flex;flex-direction:column;gap:10px}
+  .col-heads{
+    display:grid;grid-template-columns:1.6fr repeat(5,1fr);gap:8px;
+    font-family:'Baloo 2',cursive;font-weight:700;font-size:.78rem;letter-spacing:.6px;
+    text-transform:uppercase;color:var(--granite-soft);
+  }
+  .col-heads div{text-align:center;padding:0 2px}
+  .col-heads div:first-child{text-align:left}
+  .row{display:grid;grid-template-columns:1.6fr repeat(5,1fr);gap:8px}
+  .tile{
+    border-radius:12px;min-height:62px;display:flex;align-items:center;justify-content:center;
+    text-align:center;font-weight:800;font-size:.85rem;padding:6px 8px;line-height:1.2;
+    background:var(--card);border:2px solid var(--line);color:var(--granite-soft);
+    transition:transform .4s ease, background .2s;
+  }
+  .tile.name{justify-content:flex-start;text-align:left;font-family:'Baloo 2',cursive;font-size:.98rem;color:var(--spruce)}
+  .tile.flip{animation:flipIn .5s ease both}
+  @keyframes flipIn{0%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}
+  .tile.g{background:var(--tile-green);border-color:var(--tile-green);color:#fff}
+  .tile.y{background:var(--tile-yellow);border-color:var(--tile-yellow);color:#5A4310}
+  .tile.x{background:var(--tile-gray);border-color:var(--tile-gray);color:#fff}
+  .empty-row .tile{background:transparent;border-style:dashed}
+
+  /* ---------- legend ---------- */
+  .legend{
+    display:flex;flex-wrap:wrap;gap:14px;margin-top:18px;
+    font-size:.85rem;font-weight:700;color:var(--granite-soft);align-items:center;
+  }
+  .chip{width:16px;height:16px;border-radius:5px;display:inline-block;vertical-align:-3px;margin-right:6px}
+  .chip.g{background:var(--tile-green)} .chip.y{background:var(--tile-yellow)} .chip.x{background:var(--tile-gray)}
+
+  /* ---------- modal ---------- */
+  .overlay{
+    position:fixed;inset:0;background:rgba(47,75,62,.45);z-index:50;
+    display:none;align-items:center;justify-content:center;padding:20px;
+  }
+  .overlay.open{display:flex}
+  .modal{
+    background:var(--card);border-radius:20px;max-width:520px;width:100%;
+    padding:30px 28px;border:3px solid var(--spruce);
+    max-height:88vh;overflow-y:auto;
+  }
+  .modal h2{font-family:'Baloo 2',cursive;font-weight:800;color:var(--spruce);font-size:1.7rem;margin-bottom:6px}
+  .modal h3{font-family:'Baloo 2',cursive;color:var(--marmot-dark);font-size:1.15rem;margin:16px 0 4px}
+  .modal p{margin:8px 0;line-height:1.55}
+  .fact{
+    background:var(--meadow);border-left:4px solid var(--marmot);border-radius:0 10px 10px 0;
+    padding:10px 14px;margin:12px 0;font-size:.95rem;
+  }
+  .modal .actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+  .stat-line{font-weight:800;color:var(--marmot-dark)}
+  .how-cols{font-size:.93rem;line-height:1.6}
+  .how-cols b{color:var(--spruce)}
+  .close-x{
+    float:right;background:none;border:none;font-size:1.4rem;cursor:pointer;
+    color:var(--granite-soft);line-height:1;padding:4px;
+  }
+  .close-x:focus-visible{outline:3px solid var(--marmot);border-radius:6px}
+
+  @media (max-width:620px){
+    .col-heads{font-size:.6rem;gap:5px}
+    .row{gap:5px}
+    .tile{min-height:52px;font-size:.66rem;padding:4px 3px}
+    .tile.name{font-size:.74rem}
+    .marmot-svg{width:82px}
+    .guess-btn{padding:0 18px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <div>
+        <h1>Marmo<span>dle</span></h1>
+        <p class="tagline">Guess the MCAT biochem pathway in six tries.</p>
+      </div>
+    </div>
+    <div class="header-btns">
+      <button class="icon-btn" id="howBtn">How to play</button>
+      <button class="icon-btn" id="newBtn">New puzzle</button>
+    </div>
+  </header>
+
+  <div class="mascot-row">
+    <svg class="marmot-svg" id="marmot" viewBox="0 0 200 150" aria-hidden="true">
+      <!-- burrow mound -->
+      <ellipse cx="100" cy="148" rx="95" ry="14" fill="#8A5A26" opacity=".25"/>
+      <!-- body -->
+      <ellipse cx="100" cy="112" rx="52" ry="42" fill="#C98B3D"/>
+      <!-- belly -->
+      <ellipse cx="100" cy="122" rx="32" ry="27" fill="#E8C99A"/>
+      <!-- arms -->
+      <ellipse cx="62" cy="118" rx="12" ry="18" fill="#B57A2E" transform="rotate(18 62 118)"/>
+      <ellipse cx="138" cy="118" rx="12" ry="18" fill="#B57A2E" transform="rotate(-18 138 118)"/>
+      <!-- head -->
+      <circle cx="100" cy="62" r="38" fill="#C98B3D"/>
+      <!-- ears -->
+      <circle cx="70" cy="34" r="10" fill="#B57A2E"/>
+      <circle cx="130" cy="34" r="10" fill="#B57A2E"/>
+      <circle cx="70" cy="34" r="5" fill="#E8C99A"/>
+      <circle cx="130" cy="34" r="5" fill="#E8C99A"/>
+      <!-- muzzle -->
+      <ellipse cx="100" cy="74" rx="20" ry="15" fill="#E8C99A"/>
+      <!-- eyes -->
+      <g id="eyes">
+        <circle cx="85" cy="58" r="5" fill="#3E444B"/>
+        <circle cx="115" cy="58" r="5" fill="#3E444B"/>
+        <circle cx="86.5" cy="56.5" r="1.6" fill="#fff"/>
+        <circle cx="116.5" cy="56.5" r="1.6" fill="#fff"/>
+      </g>
+      <!-- nose -->
+      <ellipse cx="100" cy="68" rx="5" ry="4" fill="#6E441B"/>
+      <!-- teeth (marmots have great incisors) -->
+      <rect x="94" y="76" width="5.5" height="9" rx="2" fill="#fff" stroke="#D8DCCB" stroke-width="1"/>
+      <rect x="100.5" y="76" width="5.5" height="9" rx="2" fill="#fff" stroke="#D8DCCB" stroke-width="1"/>
+      <!-- cheeks -->
+      <circle cx="72" cy="70" r="6" fill="#E3A96A" opacity=".7"/>
+      <circle cx="128" cy="70" r="6" fill="#E3A96A" opacity=".7"/>
+    </svg>
+    <div class="speech">
+      <div id="speechText">The alpine marmot has hidden a metabolic pathway in its burrow. Guess which one! Every guess reveals how close you are, column by column.</div>
+      <div class="burrow" id="burrow" aria-label="guesses used"></div>
+    </div>
+  </div>
+
+  <div class="guess-bar">
+    <input class="guess-input" id="guessInput" type="text" autocomplete="off"
+           placeholder="Type a pathway (e.g., Glycolysis)…" aria-label="Guess a pathway">
+    <button class="guess-btn" id="guessBtn">Guess</button>
+    <div class="suggestions" id="suggestions" role="listbox"></div>
+  </div>
+
+  <div class="board">
+    <div class="col-heads">
+      <div>Pathway</div><div>Location</div><div>Build / Break</div><div>Fed / Fasted</div><div>ATP</div><div>Fuel class</div>
+    </div>
+    <div id="rows"></div>
+  </div>
+
+  <div class="legend">
+    <span><span class="chip g"></span>Exact match</span>
+    <span><span class="chip y"></span>Partially right (e.g., "Both" overlaps "Cytosol")</span>
+    <span><span class="chip x"></span>Nope</span>
+    <button class="icon-btn" id="hintBtn" style="margin-left:auto">🎺 Whistle for a hint</button>
+  </div>
+
+</div>
+
+<!-- end-of-game modal -->
+<div class="overlay" id="endOverlay" role="dialog" aria-modal="true" aria-labelledby="endTitle">
+  <div class="modal">
+    <h2 id="endTitle"></h2>
+    <p id="endBody"></p>
+    <div class="fact" id="endFact"></div>
+    <p class="stat-line" id="endStats"></p>
+    <div class="actions">
+      <button class="guess-btn" id="playAgain" style="padding:12px 24px">Play again</button>
+      <button class="icon-btn" id="closeEnd">Review the board</button>
+    </div>
+  </div>
+</div>
+
+<!-- how-to modal -->
+<div class="overlay" id="howOverlay" role="dialog" aria-modal="true" aria-labelledby="howTitle">
+  <div class="modal">
+    <button class="close-x" id="closeHow" aria-label="Close">×</button>
+    <h2 id="howTitle">How to play</h2>
+    <div class="how-cols">
+      <p>A secret <b>MCAT metabolism pathway</b> is hiding in the burrow. You have <b>six guesses</b> to find it.</p>
+      <p>Each guess must be a real pathway from the list (start typing and pick one). After you guess, five columns compare your pathway to the secret one:</p>
+      <p><b>Location</b> — cytosol, mitochondria, or both<br>
+         <b>Build / Break</b> — anabolic (builds molecules) or catabolic (breaks them down)<br>
+         <b>Fed / Fasted</b> — which metabolic state turns it on<br>
+         <b>ATP</b> — net produces, consumes, or roughly neutral<br>
+         <b>Fuel class</b> — carbohydrates, lipids, amino acids, or all fuels</p>
+      <p><span class="chip g"></span>green = exact match &nbsp; <span class="chip y"></span>yellow = overlap (a "Both" or "All fuels" answer) &nbsp; <span class="chip x"></span>gray = miss.</p>
+      <p>Stuck? <b>Whistle for a hint</b> to reveal the secret pathway's rate-limiting enzyme — high-yield for test day anyway.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   PATHWAY DATA — the entire "answer key" lives right here.
+   Add or edit pathways freely; the game adapts automatically.
+   ============================================================ */
+const PATHWAYS = [
+  {name:"Glycolysis", loc:"Cytosol", role:"Catabolic", state:"Fed", atp:"Produces", fuel:"Carbs",
+   enzyme:"PFK-1", fact:"Net +2 ATP and +2 NADH per glucose. PFK-1 is inhibited by ATP and citrate, activated by AMP and F2,6-BP."},
+  {name:"Gluconeogenesis", loc:"Both", role:"Anabolic", state:"Fasted", atp:"Consumes", fuel:"Carbs",
+   enzyme:"Fructose-1,6-bisphosphatase", fact:"Starts in the mitochondria (pyruvate carboxylase) and finishes in the cytosol — it bypasses glycolysis's three irreversible steps."},
+  {name:"Glycogenesis", loc:"Cytosol", role:"Anabolic", state:"Fed", atp:"Consumes", fuel:"Carbs",
+   enzyme:"Glycogen synthase", fact:"Uses UDP-glucose as the activated sugar donor. Insulin activates glycogen synthase via dephosphorylation."},
+  {name:"Glycogenolysis", loc:"Cytosol", role:"Catabolic", state:"Fasted", atp:"Neutral", fuel:"Carbs",
+   enzyme:"Glycogen phosphorylase", fact:"Phosphorolysis releases glucose-1-phosphate — no ATP needed to cleave. Glucagon and epinephrine switch it on."},
+  {name:"Pentose Phosphate Pathway", loc:"Cytosol", role:"Anabolic", state:"Fed", atp:"Neutral", fuel:"Carbs",
+   enzyme:"Glucose-6-phosphate dehydrogenase", fact:"Makes NADPH (for biosynthesis + glutathione) and ribose-5-phosphate (for nucleotides). Zero ATP in or out."},
+  {name:"Citric Acid Cycle", loc:"Mitochondria", role:"Catabolic", state:"Both", atp:"Produces", fuel:"All fuels",
+   enzyme:"Isocitrate dehydrogenase", fact:"Per acetyl-CoA: 3 NADH, 1 FADH2, 1 GTP. The final common pathway for carbs, fats, and amino acids."},
+  {name:"Electron Transport Chain", loc:"Mitochondria", role:"Catabolic", state:"Both", atp:"Produces", fuel:"All fuels",
+   enzyme:"ATP synthase", fact:"Complexes I–IV pump protons into the intermembrane space; ATP synthase (Complex V) rides the gradient home. ~2.5 ATP per NADH, ~1.5 per FADH2."},
+  {name:"Fatty Acid Synthesis", loc:"Cytosol", role:"Anabolic", state:"Fed", atp:"Consumes", fuel:"Lipids",
+   enzyme:"Acetyl-CoA carboxylase", fact:"Citrate shuttles acetyl-CoA out of the mitochondria; NADPH from the PPP powers the reduction steps. Insulin activates ACC."},
+  {name:"Beta-Oxidation", loc:"Mitochondria", role:"Catabolic", state:"Fasted", atp:"Produces", fuel:"Lipids",
+   enzyme:"Carnitine acyltransferase I (CPT-1)", fact:"Each round clips 2 carbons and yields 1 NADH + 1 FADH2 + 1 acetyl-CoA. Malonyl-CoA inhibits CPT-1 so synthesis and breakdown never run together."},
+  {name:"Ketogenesis", loc:"Mitochondria", role:"Anabolic", state:"Fasted", atp:"Neutral", fuel:"Lipids",
+   enzyme:"HMG-CoA synthase", fact:"Liver mitochondria turn excess acetyl-CoA into acetoacetate and beta-hydroxybutyrate — brain fuel during prolonged fasting."},
+  {name:"Cholesterol Synthesis", loc:"Cytosol", role:"Anabolic", state:"Fed", atp:"Consumes", fuel:"Lipids",
+   enzyme:"HMG-CoA reductase", fact:"HMG-CoA reductase is the statin target. Same starting material as ketogenesis (HMG-CoA), different compartment, different fate."},
+  {name:"Urea Cycle", loc:"Both", role:"Catabolic", state:"Fasted", atp:"Consumes", fuel:"Amino acids",
+   enzyme:"Carbamoyl phosphate synthetase I", fact:"Starts in the mitochondria, finishes in the cytosol. N-acetylglutamate is the required activator of CPS-I. Disposes of nitrogen from amino acid breakdown."}
+];
+
+const MAX_GUESSES = 6;
+const COLS = ["loc","role","state","atp","fuel"];
+const COL_LABELS = {loc:"Location", role:"Build / Break", state:"Fed / Fasted", atp:"ATP", fuel:"Fuel class"};
+
+/* ---------- state ---------- */
+let secret, guesses, gameOver, hintUsed;
+
+const $ = id => document.getElementById(id);
+const speech = $("speechText"), input = $("guessInput"), sugBox = $("suggestions");
+
+const MARMOT_LINES = [
+  "The marmot watches with interest…",
+  "A slow, thoughtful nibble. You're circling something.",
+  "The marmot tilts its head. Check the yellows — they overlap the answer.",
+  "Halfway to hibernation! Use the greens you've locked in.",
+  "The marmot is digging deeper. One guess left after this!",
+];
+
+function newGame(){
+  secret = PATHWAYS[Math.floor(Math.random()*PATHWAYS.length)];
+  guesses = [];
+  gameOver = false;
+  hintUsed = false;
+  $("marmot").classList.remove("happy","hiding");
+  speech.innerHTML = "The alpine marmot has hidden a metabolic pathway in its burrow. Guess which one! Every guess reveals how close you are, column by column.";
+  input.value = "";
+  input.disabled = false;
+  $("guessBtn").disabled = false;
+  $("hintBtn").disabled = false;
+  renderBoard();
+  renderBurrow();
+  closeOverlays();
+  input.focus();
+}
+
+/* ---------- comparison logic ---------- */
+function compare(gVal, sVal, col){
+  if (gVal === sVal) return "g";
+  const overlapCols = {loc:"Both", state:"Both", fuel:"All fuels"};
+  if (col in overlapCols){
+    const b = overlapCols[col];
+    if (gVal === b || sVal === b) return "y";
+  }
+  return "x";
+}
+
+/* ---------- rendering ---------- */
+function renderBoard(){
+  const rowsEl = $("rows");
+  rowsEl.innerHTML = "";
+  for (let i=0;i<MAX_GUESSES;i++){
+    const row = document.createElement("div");
+    row.className = "row" + (i >= guesses.length ? " empty-row" : "");
+    if (i < guesses.length){
+      const g = guesses[i];
+      row.appendChild(tile(g.name, "name", null, 0));
+      COLS.forEach((c,j)=>{
+        row.appendChild(tile(g[c], "", compare(g[c], secret[c], c), (j+1)*90, i === guesses.length-1));
+      });
+    } else {
+      row.appendChild(tile("", "name"));
+      COLS.forEach(()=> row.appendChild(tile("")));
+    }
+    rowsEl.appendChild(row);
+  }
+}
+function tile(text, extra="", result=null, delay=0, animate=false){
+  const d = document.createElement("div");
+  d.className = "tile" + (extra ? " "+extra : "");
+  d.textContent = text;
+  if (result){
+    if (animate){
+      d.style.animationDelay = delay + "ms";
+      d.classList.add("flip");
+    }
+    d.classList.add(result);
+  }
+  return d;
+}
+function renderBurrow(){
+  const b = $("burrow");
+  b.innerHTML = "<span>Burrow depth:</span>";
+  for (let i=0;i<MAX_GUESSES;i++){
+    const dot = document.createElement("span");
+    dot.className = "dot" + (i < guesses.length ? " used" : "");
+    b.appendChild(dot);
+  }
+}
+
+/* ---------- guessing ---------- */
+function submitGuess(){
+  if (gameOver) return;
+  const val = input.value.trim().toLowerCase();
+  const match = PATHWAYS.find(p => p.name.toLowerCase() === val);
+  if (!match){ shake(); speech.innerHTML = "The marmot doesn't recognize that pathway. Start typing and pick one from the list."; return; }
+  if (guesses.some(g => g.name === match.name)){ speech.innerHTML = "You already sniffed that burrow. Try a different pathway."; return; }
+
+  guesses.push(match);
+  input.value = "";
+  closeSuggestions();
+  renderBoard();
+  renderBurrow();
+
+  if (match.name === secret.name){ return win(); }
+  if (guesses.length >= MAX_GUESSES){ return lose(); }
+  speech.innerHTML = MARMOT_LINES[Math.min(guesses.length-1, MARMOT_LINES.length-1)];
+}
+
+function shake(){
+  input.animate([{transform:"translateX(0)"},{transform:"translateX(-6px)"},{transform:"translateX(6px)"},{transform:"translateX(0)"}],{duration:220});
+}
+
+function win(){
+  gameOver = true;
+  lockInput();
+  $("marmot").classList.add("happy");
+  speech.innerHTML = "<strong>WHEEET!</strong> 🎺 The marmot whistles in triumph!";
+  showEnd(
+    "The marmot whistles! 🎉",
+    `You found <b>${secret.name}</b> in ${guesses.length} ${guesses.length===1?"guess":"guesses"}.`,
+  );
+}
+function lose(){
+  gameOver = true;
+  lockInput();
+  $("marmot").classList.add("hiding");
+  speech.innerHTML = "The marmot yawns and settles in for hibernation… 💤";
+  showEnd(
+    "Hibernation time 💤",
+    `The pathway was <b>${secret.name}</b>. It'll still be there in the spring — and on test day.`,
+  );
+}
+function lockInput(){
+  input.disabled = true;
+  $("guessBtn").disabled = true;
+  $("hintBtn").disabled = true;
+}
+function showEnd(title, body){
+  $("endTitle").innerHTML = title;
+  $("endBody").innerHTML = body;
+  $("endFact").innerHTML = `<b>${secret.name}</b> — rate-limiting enzyme: <b>${secret.enzyme}</b>.<br>${secret.fact}`;
+  $("endStats").textContent = hintUsed ? "Hint used — no shame, that enzyme is high-yield." : "Solved hint-free. The marmot salutes you.";
+  setTimeout(()=> $("endOverlay").classList.add("open"), 650);
+}
+
+/* ---------- hint ---------- */
+$("hintBtn").addEventListener("click", ()=>{
+  if (gameOver) return;
+  hintUsed = true;
+  speech.innerHTML = `🎺 The marmot whistles a clue: the secret pathway's rate-limiting enzyme is <strong>${secret.enzyme}</strong>.`;
+  $("hintBtn").disabled = true;
+});
+
+/* ---------- autocomplete ---------- */
+let activeIdx = -1;
+function renderSuggestions(){
+  const q = input.value.trim().toLowerCase();
+  const opts = PATHWAYS.filter(p => p.name.toLowerCase().includes(q));
+  sugBox.innerHTML = "";
+  activeIdx = -1;
+  if (!opts.length || gameOver){ closeSuggestions(); return; }
+  opts.forEach(p=>{
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = p.name;
+    b.disabled = guesses.some(g => g.name === p.name);
+    b.addEventListener("mousedown", e=>{ e.preventDefault(); input.value = p.name; closeSuggestions(); submitGuess(); });
+    sugBox.appendChild(b);
+  });
+  sugBox.classList.add("open");
+}
+function closeSuggestions(){ sugBox.classList.remove("open"); activeIdx = -1; }
+
+input.addEventListener("input", renderSuggestions);
+input.addEventListener("focus", renderSuggestions);
+input.addEventListener("blur", ()=> setTimeout(closeSuggestions, 120));
+input.addEventListener("keydown", e=>{
+  const btns = [...sugBox.querySelectorAll("button:not(:disabled)")];
+  if (e.key === "ArrowDown" && btns.length){ e.preventDefault(); activeIdx = (activeIdx+1)%btns.length; highlight(btns); }
+  else if (e.key === "ArrowUp" && btns.length){ e.preventDefault(); activeIdx = (activeIdx-1+btns.length)%btns.length; highlight(btns); }
+  else if (e.key === "Enter"){
+    e.preventDefault();
+    if (activeIdx >= 0 && btns[activeIdx]){ input.value = btns[activeIdx].textContent; }
+    closeSuggestions();
+    submitGuess();
+  } else if (e.key === "Escape"){ closeSuggestions(); }
+});
+function highlight(btns){
+  btns.forEach((b,i)=> b.classList.toggle("active", i===activeIdx));
+  if (btns[activeIdx]) btns[activeIdx].scrollIntoView({block:"nearest"});
+}
+
+/* ---------- buttons & modals ---------- */
+$("guessBtn").addEventListener("click", submitGuess);
+$("newBtn").addEventListener("click", newGame);
+$("playAgain").addEventListener("click", newGame);
+$("closeEnd").addEventListener("click", ()=> $("endOverlay").classList.remove("open"));
+$("howBtn").addEventListener("click", ()=> $("howOverlay").classList.add("open"));
+$("closeHow").addEventListener("click", ()=> $("howOverlay").classList.remove("open"));
+document.addEventListener("keydown", e=>{ if (e.key === "Escape") closeOverlays(); });
+[$("endOverlay"), $("howOverlay")].forEach(ov=>{
+  ov.addEventListener("click", e=>{ if (e.target === ov) ov.classList.remove("open"); });
+});
+function closeOverlays(){ $("endOverlay").classList.remove("open"); $("howOverlay").classList.remove("open"); }
+
+newGame();
+</script>
+</body>
+</html>
