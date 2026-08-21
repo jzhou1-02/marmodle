@@ -352,11 +352,8 @@ const MAX_GUESSES = 6;
 const COLS = ["loc","role","state","atp","fuel"];
 const COL_LABELS = {loc:"Location", role:"Build / Break", state:"Fed / Fasted", atp:"ATP", fuel:"Fuel class"};
 
-/* ---------- daily puzzle logic ----------
-   Everyone's browser computes the same day number from the date,
-   scrambles it, and uses it to index the pathway list. Same day =
-   same puzzle for every visitor, with no server involved. */
-const EPOCH = new Date(2026, 7, 20);           // puzzle #1 = Aug 20, 2026 (launch day!)
+/* daily puzzle logic  */
+const EPOCH = new Date(2026, 7, 20);           // launch day!!!!!!!
 function dayNumber(){
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -371,10 +368,7 @@ function dailyPathway(){
   return PATHWAYS[Math.abs(x) % PATHWAYS.length];
 }
 
-/* ---------- streaks ----------
-   Saved in the browser's localStorage on the deployed site. If storage
-   is unavailable (private browsing, embedded previews), the game falls
-   back to remembering the streak for the current session only. */
+/* streaks */
 const store = {
   mem: null,
   read(){
@@ -410,18 +404,18 @@ function renderStreak(){
     : "";
 }
 
-/* ---------- state ---------- */
+/*  state  */
 let secret, guesses, gameOver, hintUsed, mode = "daily";
 
 const $ = id => document.getElementById(id);
 const speech = $("speechText"), input = $("guessInput"), sugBox = $("suggestions");
 
 const MARMOT_LINES = [
-  "The marmot watches with interest…",
+  "The marmot may start nibbling your bicep",
   "A slow, thoughtful nibble. You're circling something.",
-  "The marmot tilts its head. Check the yellows — they overlap the answer.",
-  "Halfway to hibernation! Use the greens you've locked in.",
-  "The marmot is digging deeper. One guess left after this!",
+  "The marmot tilts its head. Check the yellows!",
+  "Halfway to hibernation! Marmots like turnsticles.",
+  "The marmot is digging deeper in it's butt.",
 ];
 
 function newGame(m){
@@ -438,7 +432,7 @@ function newGame(m){
   gameOver = false;
   hintUsed = false;
   $("marmot").classList.remove("happy","hiding");
-  speech.innerHTML = "The alpine marmot has hidden a metabolic pathway in its burrow. Guess which one! Every guess reveals how close you are, column by column.";
+  speech.innerHTML = "The big and greedy marmot has hidden a metabolic pathway in its burrow. Guess which one! Every guess reveals how close you are. If you lose the marmot eats kitty";
   input.value = "";
   input.disabled = false;
   $("guessBtn").disabled = false;
@@ -550,7 +544,7 @@ function lose(){
   speech.innerHTML = "The marmot yawns and settles in for hibernation… 💤";
   showEnd(
     "Hibernation time 💤",
-    `The pathway was <b>${secret.name}</b>. It'll still be there in the spring — and on test day.`,
+    `The pathway was <b>${secret.name}</b>. It'll still be there in the spring, and on test day.`,
   );
 }
 function lockInput(){
