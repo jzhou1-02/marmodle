@@ -60,7 +60,7 @@
     display:flex;align-items:flex-end;gap:18px;margin:18px 0 6px;
     border-bottom:3px solid var(--line);padding-bottom:0;
   }
-  .marmot-svg{width:110px;height:auto;flex-shrink:0;transform-origin:bottom center;animation:peek .9s ease}
+  .marmot-svg{width:110px;height:auto;flex-shrink:0;transform-origin:bottom center;animation:peek .9s ease;object-fit:contain}
   @keyframes peek{from{transform:translateY(60%)}to{transform:translateY(0)}}
   .marmot-svg.happy{animation:bounce .6s ease infinite alternate}
   @keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-10px)}}
@@ -211,41 +211,7 @@
   </header>
 
   <div class="mascot-row">
-    <svg class="marmot-svg" id="marmot" viewBox="0 0 200 150" aria-hidden="true">
-      <!-- burrow mound -->
-      <ellipse cx="100" cy="148" rx="95" ry="14" fill="#8A5A26" opacity=".25"/>
-      <!-- body -->
-      <ellipse cx="100" cy="112" rx="52" ry="42" fill="#C98B3D"/>
-      <!-- belly -->
-      <ellipse cx="100" cy="122" rx="32" ry="27" fill="#E8C99A"/>
-      <!-- arms -->
-      <ellipse cx="62" cy="118" rx="12" ry="18" fill="#B57A2E" transform="rotate(18 62 118)"/>
-      <ellipse cx="138" cy="118" rx="12" ry="18" fill="#B57A2E" transform="rotate(-18 138 118)"/>
-      <!-- head -->
-      <circle cx="100" cy="62" r="38" fill="#C98B3D"/>
-      <!-- ears -->
-      <circle cx="70" cy="34" r="10" fill="#B57A2E"/>
-      <circle cx="130" cy="34" r="10" fill="#B57A2E"/>
-      <circle cx="70" cy="34" r="5" fill="#E8C99A"/>
-      <circle cx="130" cy="34" r="5" fill="#E8C99A"/>
-      <!-- muzzle -->
-      <ellipse cx="100" cy="74" rx="20" ry="15" fill="#E8C99A"/>
-      <!-- eyes -->
-      <g id="eyes">
-        <circle cx="85" cy="58" r="5" fill="#3E444B"/>
-        <circle cx="115" cy="58" r="5" fill="#3E444B"/>
-        <circle cx="86.5" cy="56.5" r="1.6" fill="#fff"/>
-        <circle cx="116.5" cy="56.5" r="1.6" fill="#fff"/>
-      </g>
-      <!-- nose -->
-      <ellipse cx="100" cy="68" rx="5" ry="4" fill="#6E441B"/>
-      <!-- teeth (marmots have great incisors) -->
-      <rect x="94" y="76" width="5.5" height="9" rx="2" fill="#fff" stroke="#D8DCCB" stroke-width="1"/>
-      <rect x="100.5" y="76" width="5.5" height="9" rx="2" fill="#fff" stroke="#D8DCCB" stroke-width="1"/>
-      <!-- cheeks -->
-      <circle cx="72" cy="70" r="6" fill="#E3A96A" opacity=".7"/>
-      <circle cx="128" cy="70" r="6" fill="#E3A96A" opacity=".7"/>
-    </svg>
+    <img class="marmot-svg" id="marmot" src="marmot.png" alt="" aria-hidden="true">
     <div class="speech">
       <div id="speechText">The alpine marmot has hidden a metabolic pathway in its burrow. Guess which one! Every guess reveals how close you are, column by column.</div>
       <div class="burrow" id="burrow" aria-label="guesses used"></div>
@@ -268,9 +234,9 @@
 
   <div class="legend">
     <span><span class="chip g"></span>Exact match</span>
-    <span><span class="chip y"></span>Partially right (e.g., "Both" overlaps "Cytosol")</span>
+    <span><span class="chip y"></span>Partially right</span>
     <span><span class="chip x"></span>Nope</span>
-    <button class="icon-btn" id="hintBtn" style="margin-left:auto">🎺 Whistle for a hint</button>
+    <button class="icon-btn" id="hintBtn" style="margin-left:auto">Whistle for a hint!</button>
   </div>
 
 </div>
@@ -302,17 +268,14 @@
          <b>Fed / Fasted</b> — which metabolic state turns it on<br>
          <b>ATP</b> — net produces, consumes, or roughly neutral<br>
          <b>Fuel class</b> — carbohydrates, lipids, amino acids, or all fuels</p>
-      <p><span class="chip g"></span>green = exact match &nbsp; <span class="chip y"></span>yellow = overlap (a "Both" or "All fuels" answer) &nbsp; <span class="chip x"></span>gray = miss.</p>
-      <p>Stuck? <b>Whistle for a hint</b> to reveal the secret pathway's rate-limiting enzyme — high-yield for test day anyway.</p>
+      <p><span class="chip g"></span>green = exact match &nbsp; <span class="chip y"></span>yellow = overlap &nbsp; <span class="chip x"></span>gray = miss.</p>
+      <p>Stuck? <b>Whistle for a hint</b> to reveal the secret pathway's rate-limiting enzyme.</p>
     </div>
   </div>
 </div>
 
 <script>
-/* ============================================================
-   PATHWAY DATA — the entire "answer key" lives right here.
-   Add or edit pathways freely; the game adapts automatically.
-   ============================================================ */
+/* pathway data */
 const PATHWAYS = [
   {name:"Glycolysis", loc:"Cytosol", role:"Catabolic", state:"Fed", atp:"Produces", fuel:"Carbs",
    enzyme:"PFK-1", fact:"Net +2 ATP and +2 NADH per glucose. PFK-1 is inhibited by ATP and citrate, activated by AMP and F2,6-BP."},
@@ -503,8 +466,8 @@ function submitGuess(){
   if (gameOver) return;
   const val = input.value.trim().toLowerCase();
   const match = PATHWAYS.find(p => p.name.toLowerCase() === val);
-  if (!match){ shake(); speech.innerHTML = "The marmot doesn't recognize that pathway. Start typing and pick one from the list."; return; }
-  if (guesses.some(g => g.name === match.name)){ speech.innerHTML = "You already sniffed that burrow. Try a different pathway."; return; }
+  if (!match){ shake(); speech.innerHTML = "The marmot's booty didn't quake. Start typing and pick one from the list."; return; }
+  if (guesses.some(g => g.name === match.name)){ speech.innerHTML = "You already sniffed that booty. Try a different pathway."; return; }
 
   guesses.push(match);
   input.value = "";
@@ -525,7 +488,7 @@ function win(){
   gameOver = true;
   lockInput();
   $("marmot").classList.add("happy");
-  speech.innerHTML = "<strong>WHEEET!</strong> 🎺 The marmot whistles in triumph!";
+  speech.innerHTML = "<strong>TWHEEET!</strong> 🎺 The marmot whistles in triumph!";
   let streakLine = "";
   if (mode === "daily"){
     const d = recordDailyWin();
