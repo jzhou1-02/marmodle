@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Marmodle — the MCAT pathway guessing game</title>
+<title>Marmodle, For Evelyn</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
@@ -263,11 +263,11 @@
     <div class="how-cols">
       <p>A secret <b>MCAT metabolism pathway</b> is hiding in the burrow. You have <b>six guesses</b> to find it.</p>
       <p>Each guess must be a real pathway from the list (start typing and pick one). After you guess, five columns compare your pathway to the secret one:</p>
-      <p><b>Location</b> — cytosol, mitochondria, or both<br>
-         <b>Build / Break</b> — anabolic (builds molecules) or catabolic (breaks them down)<br>
-         <b>Fed / Fasted</b> — which metabolic state turns it on<br>
-         <b>ATP</b> — net produces, consumes, or roughly neutral<br>
-         <b>Fuel class</b> — carbohydrates, lipids, amino acids, or all fuels</p>
+      <p><b>Location</b>, cytosol, mitochondria, or both<br>
+         <b>Build / Break</b>, anabolic or catabolic<br>
+         <b>Fed / Fasted</b>, which metabolic state turns it on<br>
+         <b>ATP</b>, net produces, consumes, or roughly neutral<br>
+         <b>Fuel class</b>, carbohydrates, lipids, amino acids, or all fuels</p>
       <p><span class="chip g"></span>green = exact match &nbsp; <span class="chip y"></span>yellow = overlap &nbsp; <span class="chip x"></span>gray = miss.</p>
       <p>Stuck? <b>Whistle for a hint</b> to reveal the secret pathway's rate-limiting enzyme.</p>
     </div>
@@ -488,7 +488,7 @@ function win(){
   gameOver = true;
   lockInput();
   $("marmot").classList.add("happy");
-  speech.innerHTML = "<strong>TWHEEET!</strong> 🎺 The marmot whistles in triumph!";
+  speech.innerHTML = "<strong>YAAAY!</strong> 🎺 The marmot whistles in triumph!";
   let streakLine = "";
   if (mode === "daily"){
     const d = recordDailyWin();
@@ -504,7 +504,7 @@ function lose(){
   gameOver = true;
   lockInput();
   $("marmot").classList.add("hiding");
-  speech.innerHTML = "The marmot yawns and settles in for hibernation… 💤";
+  speech.innerHTML = "The marmot settles in for hibernation and drools a little while sleeping… 💤";
   showEnd(
     "Hibernation time 💤",
     `The pathway was <b>${secret.name}</b>. It'll still be there in the spring, and on test day.`,
@@ -519,11 +519,11 @@ function showEnd(title, body){
   $("endTitle").innerHTML = title;
   $("endBody").innerHTML = body;
   $("endFact").innerHTML = `<b>${secret.name}</b> — rate-limiting enzyme: <b>${secret.enzyme}</b>.<br>${secret.fact}`;
-  $("endStats").textContent = hintUsed ? "Hint used — no shame, that enzyme is high-yield." : "Solved hint-free. The marmot salutes you.";
+  $("endStats").textContent = hintUsed ? "Hint used. No worries, that enzyme is high-yield." : "Solved hint-free. The marmot nibbles your big brain.";
   setTimeout(()=> $("endOverlay").classList.add("open"), 650);
 }
 
-/* ---------- hint ---------- */
+/* --------- hint ---------- */
 $("hintBtn").addEventListener("click", ()=>{
   if (gameOver) return;
   hintUsed = true;
