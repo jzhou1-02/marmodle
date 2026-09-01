@@ -296,18 +296,10 @@ const PATHWAYS = [
    enzyme:"Acetyl-CoA carboxylase", fact:"Citrate shuttles acetyl-CoA out of the mitochondria; NADPH from the PPP powers the reduction steps. Insulin activates ACC."},
   {name:"Beta-Oxidation", loc:"Mitochondria", role:"Catabolic", state:"Fasted", atp:"Produces", fuel:"Lipids",
    enzyme:"Carnitine acyltransferase I (CPT-1)", fact:"Each round clips 2 carbons and yields 1 NADH + 1 FADH2 + 1 acetyl-CoA. Malonyl-CoA inhibits CPT-1 so synthesis and breakdown never run together."},
-  {name:"Ketogenesis", loc:"Mitochondria", role:"Anabolic", state:"Fasted", atp:"Neutral", fuel:"Lipids",
-   enzyme:"HMG-CoA synthase", fact:"Liver mitochondria turn excess acetyl-CoA into acetoacetate and beta-hydroxybutyrate — brain fuel during prolonged fasting."},
   {name:"Cholesterol Synthesis", loc:"Cytosol", role:"Anabolic", state:"Fed", atp:"Consumes", fuel:"Lipids",
    enzyme:"HMG-CoA reductase", fact:"HMG-CoA reductase is the statin target. Same starting material as ketogenesis (HMG-CoA), different compartment, different fate."},
   {name:"Urea Cycle", loc:"Both", role:"Catabolic", state:"Fasted", atp:"Consumes", fuel:"Amino acids",
    enzyme:"Carbamoyl phosphate synthetase I", fact:"Starts in the mitochondria, finishes in the cytosol. N-acetylglutamate is the required activator of CPS-I. Disposes of nitrogen from amino acid breakdown."},
-  {name:"Galactose Metabolism", loc:"Cytosol", role:"Catabolic", state:"Fed", atp:"Consumes", fuel:"Carbs",
-   enzyme:"Galactose-1-P uridyltransferase (GALT)", fact:"Lactase splits lactose into glucose + galactose; galactokinase then traps galactose with ATP. GALT deficiency causes classic galactosemia — galactitol buildup leads to cataracts."},
-  {name:"Fructose Metabolism", loc:"Cytosol", role:"Catabolic", state:"Fed", atp:"Consumes", fuel:"Carbs",
-   enzyme:"Fructokinase", fact:"Fructokinase traps fructose as fructose-1-phosphate, then aldolase B splits it into glycolytic intermediates — bypassing PFK-1 regulation entirely. Aldolase B deficiency = hereditary fructose intolerance."},
-  {name:"Ketolysis", loc:"Mitochondria", role:"Catabolic", state:"Fasted", atp:"Produces", fuel:"Lipids",
-   enzyme:"Thiophorase (SCOT)", fact:"Extrahepatic tissues convert ketone bodies back into acetyl-CoA using thiophorase (succinyl-CoA acetoacetate transferase). The liver lacks this enzyme — it makes ketones but can't burn them."},
   {name:"Lactic Acid Fermentation", loc:"Cytosol", role:"Catabolic", state:"Both", atp:"Produces", fuel:"Carbs",
    enzyme:"Lactate dehydrogenase", fact:"LDH regenerates NAD+ so glycolysis can keep running without oxygen — RBCs always (no mitochondria), muscle during sprints. Lactate ships to the liver for gluconeogenesis via the Cori cycle."}
 ];
