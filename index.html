@@ -61,7 +61,7 @@
     display:flex;align-items:flex-end;gap:18px;margin:18px 0 6px;
     border-bottom:3px solid var(--line);padding-bottom:0;
   }
-  .marmot-svg{width:110px;height:auto;flex-shrink:0;transform-origin:bottom center;animation:peek .9s ease;object-fit:contain}
+  .marmot-svg{width:110px;height:auto;flex-shrink:0;transform-origin:bottom center;animation:peek .9s ease;object-fit:contain;cursor:pointer}
   @keyframes peek{from{transform:translateY(60%)}to{transform:translateY(0)}}
   .marmot-svg.happy{animation:bounce .6s ease infinite alternate}
   @keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-10px)}}
@@ -576,6 +576,26 @@ document.addEventListener("keydown", e=>{ if (e.key === "Escape") closeOverlays(
   ov.addEventListener("click", e=>{ if (e.target === ov) ov.classList.remove("open"); });
 });
 function closeOverlays(){ $("endOverlay").classList.remove("open"); $("howOverlay").classList.remove("open"); }
+
+/* ---------- marmot click bounce ---------- */
+const marmotImg = $("marmot");
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
+marmotImg.addEventListener("click", ()=>{
+  if (reduceMotion.matches) return;
+  // Web Animations API, not a CSS class: keeps this independent of the
+  // .marmot-svg / .happy / .hiding declarative animations so it can't
+  // collide with (and re-trigger) them.
+  marmotImg.animate(
+    [
+      { transform: "translateY(0)" },
+      { transform: "translateY(-26px)", offset: 0.35 },
+      { transform: "translateY(0)", offset: 0.6 },
+      { transform: "translateY(-8px)", offset: 0.8 },
+      { transform: "translateY(0)" }
+    ],
+    { duration: 500, easing: "ease" }
+  );
+});
 
 newGame("daily");
 </script>
